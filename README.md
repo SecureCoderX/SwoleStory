@@ -1,97 +1,175 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# SwoleStory
 
-# Getting Started
+SwoleStory is an intelligent fitness tracking ecosystem designed for serious strength athletes. Going beyond simple workout logging, it provides sophisticated tracking of progressive overload, volume management, and recovery metrics to optimize your training journey.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Project Vision
 
-## Step 1: Start Metro
+At its core, SwoleStory is built to support the complex needs of strength training and hypertrophy-focused athletes. The system combines workout tracking, nutrition monitoring, and advanced analytics to provide data-driven insights for optimizing training progress.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### Core Features
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+The application is built around three key components working in harmony:
 
-```sh
-# Using npm
-npm start
+Mobile Training Application enables intelligent workout logging with features like:
+- Smart workout logging with RPE tracking
+- Intelligent rest timer that adapts to exercise type
+- Sophisticated volume tracking across movement patterns
+- Exercise substitution system for equipment flexibility
+- Progressive overload tracking and recommendations
 
-# OR using Yarn
-yarn start
+Nutrition Tracking (Coming Soon) will provide:
+- Energy and recovery metrics
+- Body composition analysis
+- Meal timing optimization
+- Integration with training performance
+
+Desktop Analytics Platform (Coming Soon) will offer:
+- Advanced training analysis
+- Body composition tracking
+- Performance correlations
+- Progress visualization
+
+## Technical Architecture
+
+SwoleStory is built using modern, scalable technologies:
+
+Frontend:
+- Mobile: React Native with TypeScript
+- Desktop: Electron with React (future)
+- Data Visualization: Recharts/Victory
+- Theming: Material You-inspired dark theme
+- State Management: React Context + Local State
+
+Backend:
+- Supabase platform
+- PostgreSQL database
+- Built-in authentication
+- Real-time data synchronization
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, ensure you have installed:
+- Node.js (v18 or later)
+- npm (v8 or later)
+- React Native development environment
+- Android Studio (for Android development)
+- Xcode (for iOS development, Mac only)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/sworestory.git
+   cd swolestory
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit .env with your Supabase credentials.
+
+4. Start the development server:
+   ```bash
+   npm start
+   ```
+
+5. Run the application:
+   ```bash
+   # For iOS
+   npm run ios
+   
+   # For Android
+   npm run android
+   ```
+
+### Development Guidelines
+
+We follow these principles in our development:
+
+Code Quality:
+- Use TypeScript for type safety
+- Follow the established project structure
+- Write comprehensive error handling
+- Include meaningful comments
+- Create reusable components
+
+Testing:
+- Write unit tests for utilities and hooks
+- Include integration tests for complex features
+- Test across different devices and screen sizes
+- Verify offline functionality
+
+Performance:
+- Optimize render cycles
+- Implement efficient data caching
+- Monitor and optimize bundle size
+- Profile React Native performance
+
+### Project Structure
+
+```
+src/
+├── api/         # API and data access layer
+├── components/  # Reusable UI components
+├── config/      # Configuration files
+├── contexts/    # React Context definitions
+├── navigation/  # Navigation configuration
+├── screens/     # Screen components
+├── theme/       # Theming and styling
+├── types/       # TypeScript definitions
+└── utils/       # Utility functions
 ```
 
-## Step 2: Build and run your app
+## Database Schema
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+The application uses a sophisticated database schema designed for flexibility and performance:
 
-### Android
+- Program Configuration: Stores training templates and system settings
+- Exercises: Maintains exercise definitions and progression rules
+- Exercise Alternatives: Maps exercise substitution options
+- Workout Sessions: Records training sessions and metrics
+- Exercise Sets: Tracks individual set performance
+- Performance Metrics: Stores various performance indicators
+- Recovery Metrics: Monitors recovery and readiness
 
-```sh
-# Using npm
-npm run android
+## Contributing
 
-# OR using Yarn
-yarn android
-```
+We welcome contributions! Please follow these steps:
 
-### iOS
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to your branch
+5. Create a Pull Request
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Please ensure your code:
+- Passes all tests
+- Follows our coding standards
+- Includes appropriate documentation
+- Maintains type safety
+- Has been tested on both iOS and Android
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## License
 
-```sh
-bundle install
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Then, and every time you update your native dependencies, run:
+## Acknowledgments
 
-```sh
-bundle exec pod install
-```
+SwoleStory builds upon the knowledge and experience of strength athletes and coaches, combining proven training principles with modern technology to create an intelligent training companion.
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Support
 
-```sh
-# Using npm
-npm run ios
+For support, please:
+- Check our documentation
+- Open an issue on GitHub
+- Contact the development team
 
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Remember to star the repository if you find it useful!
