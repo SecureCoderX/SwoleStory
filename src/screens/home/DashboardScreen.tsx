@@ -10,44 +10,55 @@ import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useDatabase } from '../../contexts/DatabaseContext';
 import { theme } from '../../theme/theme';
+import { ExerciseCard } from '../../components/workout/ExerciseCard';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../../navigation/types/mainTypes';
+import type { WorkoutSession, Exercise } from '../../types/database';
 
-// Define the navigation type for type safety with React Navigation
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
   HomeStackParamList,
   'Dashboard'
 >;
 
-// Define the possible workout types in our PPL program
+// Define our workout types for the PPL program
 type PPLWorkoutType = 'Push A' | 'Pull A' | 'Legs A' | 'Push B' | 'Pull B' | 'Legs B';
 
-// Type definitions for workout summaries and program details
+// Types for exercise tracking
+interface ExerciseSet {
+  setNumber: number;
+  weight: number;
+  reps: number;
+  rpe: number | null;
+}
+
+interface WorkoutExercise {
+  id: string;
+  name: string;
+  targetSets: number;
+  repRange: string;
+  targetRPE: number;
+  sets: ExerciseSet[];
+  isComplete: boolean;
+}
+
 interface WorkoutSummary {
   id: string;
   date: string;
-  programDay: PPLWorkoutType;
+  programDay: string;
   exerciseCount: number;
   readinessScore?: number;
 }
 
-interface ProgramExercise {
-  id: string;
-  name: string;
-  category: string;
-  defaultSets: number;
-  repRange: string;
-  restPeriod: number;
-  targetRPE: number;
+// Define the database context value interface
+interface DatabaseContextValue {
+  workoutSessions: WorkoutSession[];
+  exercises: Exercise[];
+  isLoading: boolean;
+  error: Error | null;
 }
 
-interface WorkoutProgram {
-  type: PPLWorkoutType;
-  exercises: ProgramExercise[];
-}
-
-// Helper function to determine the next workout in the PPL sequence
-function getNextWorkoutInSequence(currentWorkout: string): PPLWorkoutType {
+// Helper function to get next workout in sequence
+const getNextWorkoutInSequence = (currentWorkout: string): PPLWorkoutType => {
   const sequence: PPLWorkoutType[] = [
     'Push A', 'Pull A', 'Legs A',
     'Push B', 'Pull B', 'Legs B',
@@ -55,67 +66,48 @@ function getNextWorkoutInSequence(currentWorkout: string): PPLWorkoutType {
 
   const currentIndex = sequence.indexOf(currentWorkout as PPLWorkoutType);
   if (currentIndex === -1) {return sequence[0];}
-
   return sequence[(currentIndex + 1) % sequence.length];
-}
+};
 
 export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
-  // Get all necessary data from DatabaseContext
-  const { workoutSessions, exercises, isLoading, error } = useDatabase();
+  const { workoutSessions, exercises, isLoading, error }: DatabaseContextValue = useDatabase();
 
-  // State management for the dashboard
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSummary[]>([]);
   const [nextWorkout, setNextWorkout] = useState<PPLWorkoutType>('Push A');
-  const [_lastWorkout, setLastWorkout] = useState<WorkoutSummary | null>(null);
-  const [currentProgram, setCurrentProgram] = useState<WorkoutProgram | null>(null);
+  const [lastWorkout, setLastWorkout] = useState<WorkoutSummary | null>(null);
+  const [currentExercises, setCurrentExercises] = useState<WorkoutExercise[]>([]);
   const [averageReadiness, setAverageReadiness] = useState<number | null>(null);
 
-  // Helper function to format rest periods into human-readable format
-  const formatRestPeriod = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return remainingSeconds > 0
-      ? `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-      : `${minutes} min`;
-  };
+  // Memoize the loadExercisesForWorkout function to prevent unnecessary re-renders
+  const loadExercisesForWorkout = useCallback((workoutType: PPLWorkoutType) => {
+    if (!exercises) {return;}
 
-  // Function to get exercises for a specific workout type from the database
-  const getExercisesForWorkout = useCallback((workoutType: PPLWorkoutType): ProgramExercise[] => {
-    if (!exercises) {return [];}
-
-    // Extract the movement pattern (Push/Pull/Legs) and variant (A/B)
-    const [pattern, variant] = workoutType.split(' ');
-
-    // Filter exercises based on category and transform to program format
-    return exercises
-      .filter(exercise => {
-        // Match both the movement pattern and workout variant
-        const matchesPattern = exercise.category.toLowerCase().includes(pattern.toLowerCase());
-        const matchesVariant = exercise.progression_type.includes(variant) ||
-                             exercise.progression_type === 'both';
-        return matchesPattern && matchesVariant;
-      })
-      .map(exercise => ({
-        id: exercise.id,
-        name: exercise.name,
-        category: exercise.category,
-        defaultSets: exercise.default_sets,
-        repRange: exercise.rep_range,
-        restPeriod: exercise.rest_period,
-        targetRPE: exercise.target_rpe,
+    const workoutExercises = exercises
+      .filter(ex => ex.category === workoutType)
+      .map(ex => ({
+        id: ex.id,
+        name: ex.name,
+        targetSets: ex.default_sets,
+        repRange: ex.rep_range,
+        targetRPE: ex.target_rpe,
+        sets: Array.from({ length: ex.default_sets }, (_, i) => ({
+          setNumber: i + 1,
+          weight: 0,
+          reps: 0,
+          rpe: null,
+        })),
+        isComplete: false,
       }));
+
+    setCurrentExercises(workoutExercises);
   }, [exercises]);
 
+  // Process workout data and load exercises
   useEffect(() => {
     const processWorkoutData = () => {
       if (!workoutSessions?.length) {
-        // No previous workouts - set up initial program
-        const initialExercises = getExercisesForWorkout('Push A');
-        setCurrentProgram({
-          type: 'Push A',
-          exercises: initialExercises,
-        });
+        loadExercisesForWorkout('Push A');
         return;
       }
 
@@ -125,25 +117,21 @@ export const DashboardScreen: React.FC = () => {
         .map(session => ({
           id: session.id,
           date: new Date(session.date).toLocaleDateString(),
-          programDay: session.program_day as PPLWorkoutType,
+          programDay: session.program_day,
           exerciseCount: session.exercise_sets?.length ?? 0,
           readinessScore: session.readiness_score ?? undefined,
         }));
 
       setRecentWorkouts(recent);
 
-      // Determine next workout based on most recent
+      // Set the last completed workout and determine next in sequence
       const mostRecent = recent[0];
       setLastWorkout(mostRecent);
       const nextInSequence = getNextWorkoutInSequence(mostRecent.programDay);
       setNextWorkout(nextInSequence);
 
-      // Get exercises for next workout
-      const programExercises = getExercisesForWorkout(nextInSequence);
-      setCurrentProgram({
-        type: nextInSequence,
-        exercises: programExercises,
-      });
+      // Load exercises for the next workout
+      loadExercisesForWorkout(nextInSequence);
 
       // Calculate average readiness
       const readinessScores = recent
@@ -159,7 +147,12 @@ export const DashboardScreen: React.FC = () => {
     if (!isLoading && workoutSessions && exercises) {
       processWorkoutData();
     }
-  }, [workoutSessions, exercises, isLoading, getExercisesForWorkout]);
+  }, [workoutSessions, exercises, isLoading, loadExercisesForWorkout]);
+
+  const handleStartExercise = useCallback((exercise: WorkoutExercise) => {
+    // Handle starting the exercise - we'll implement the modal next
+    console.log('Starting exercise:', exercise.name);
+  }, []);
 
   if (isLoading) {
     return (
@@ -187,50 +180,29 @@ export const DashboardScreen: React.FC = () => {
         <View style={styles.workoutPreview}>
           <Text style={styles.workoutType}>{nextWorkout}</Text>
 
-          {currentProgram && (
-            <View style={styles.programContainer}>
-              {/* Exercise List */}
-              <View style={styles.exerciseList}>
-                {currentProgram.exercises.map((exercise) => (
-                  <View key={exercise.id} style={styles.exerciseItem}>
-                    <Text style={styles.exerciseName}>{exercise.name}</Text>
-                    <View style={styles.exerciseDetails}>
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Sets</Text>
-                        <Text style={styles.detailValue}>{exercise.defaultSets}</Text>
-                      </View>
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Reps</Text>
-                        <Text style={styles.detailValue}>{exercise.repRange}</Text>
-                      </View>
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>RPE</Text>
-                        <Text style={styles.detailValue}>{exercise.targetRPE}</Text>
-                      </View>
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Rest</Text>
-                        <Text style={styles.detailValue}>
-                          {formatRestPeriod(exercise.restPeriod)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => navigation.navigate('StartWorkout', {
-                  programDay: nextWorkout,
-                })}
-              >
-                <Text style={styles.actionButtonText}>
-                  Start {nextWorkout}
-                </Text>
-              </TouchableOpacity>
+          {lastWorkout && (
+            <View style={styles.previousWorkout}>
+              <Text style={styles.previousWorkoutLabel}>
+                Previous: {lastWorkout.programDay}
+              </Text>
+              <Text style={styles.previousWorkoutDate}>
+                {lastWorkout.date}
+              </Text>
             </View>
           )}
         </View>
+      </View>
+
+      {/* Today's Exercises Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Today's Exercises</Text>
+        {currentExercises.map(exercise => (
+          <ExerciseCard
+            key={exercise.id}
+            {...exercise}
+            onStartExercise={() => handleStartExercise(exercise)}
+          />
+        ))}
       </View>
 
       {/* Readiness Score Section */}
@@ -293,64 +265,30 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
   },
-  workoutType: {
-    ...theme.typography.headingLarge,
-    color: theme.colors.coral,
-    marginBottom: theme.spacing.md,
-  },
-  programContainer: {
-    marginTop: theme.spacing.md,
-  },
-  exerciseList: {
-    gap: theme.spacing.md,
-  },
-  exerciseItem: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderLeftWidth: 2,
-    borderLeftColor: theme.colors.coral,
-  },
-  exerciseName: {
-    ...theme.typography.bodyLarge,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
-  },
-  exerciseDetails: {
-    gap: theme.spacing.xs,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surface,
-  },
-  detailLabel: {
-    ...theme.typography.bodyMedium,
-    color: theme.colors.textSecondary,
-  },
-  detailValue: {
-    ...theme.typography.bodyMedium,
-    color: theme.colors.coral,
-  },
   sectionTitle: {
     ...theme.typography.headingMedium,
     color: theme.colors.textPrimary,
     marginBottom: theme.spacing.md,
   },
-  actionButton: {
-    backgroundColor: theme.colors.coral,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    marginTop: theme.spacing.lg,
+  workoutType: {
+    ...theme.typography.headingLarge,
+    color: theme.colors.coral,
+    marginBottom: theme.spacing.md,
   },
-  actionButtonText: {
-    ...theme.typography.labelLarge,
-    color: theme.colors.textPrimary,
+  previousWorkout: {
+    marginBottom: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderLeftWidth: 2,
+    borderLeftColor: theme.colors.textSecondary,
+  },
+  previousWorkoutLabel: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.textSecondary,
+  },
+  previousWorkoutDate: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
   },
   readinessContainer: {
     alignItems: 'center',
@@ -394,4 +332,3 @@ const styles = StyleSheet.create({
 });
 
 export default DashboardScreen;
-
