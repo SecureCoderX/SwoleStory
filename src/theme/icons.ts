@@ -1,10 +1,8 @@
-// We'll use react-native-vector-icons
-export { default as Icon } from 'react-native-vector-icons/FontAwesome';
-
 export const iconSizes = {
   small: 16,
   medium: 24,
   large: 32,
+  iconStyle: 'solid',
 } as const;
 
 export const icons = {
@@ -14,7 +12,7 @@ export const icons = {
   legsDay: 'walking',
 
   // Navigation icons
-  home: 'home',
+  home: 'house',
   workout: 'stopwatch',
   progress: 'line-chart',
   profile: 'user',

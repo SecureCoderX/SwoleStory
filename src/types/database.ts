@@ -92,6 +92,7 @@ export interface Database {
       };
       workout_sessions: {
         Row: {
+          exercise_sets: any;
           id: string;
           date: string;
           program_day: string;

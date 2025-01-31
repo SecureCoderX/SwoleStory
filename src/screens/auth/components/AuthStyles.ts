@@ -33,6 +33,7 @@ export const authStyles = StyleSheet.create({
   },
   input: {
     marginBottom: theme.spacing.md,
+    color: theme.colors.textPrimary,
     backgroundColor: theme.colors.surface,
   },
   button: {
