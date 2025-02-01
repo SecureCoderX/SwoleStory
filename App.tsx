@@ -1,9 +1,8 @@
 // App.tsx
 import React from 'react';
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
-import { RootNavigator } from './src/navigation/RootNavigator';
-import { DatabaseProvider } from './src/contexts/DatabaseContext';
-import { theme } from './src/theme/theme';
+import { theme } from './src/utils/theme/theme';
+import RegistrationPage from './src/screens/auth/RegisterScreen';
 
 function App(): React.JSX.Element {
   return (
@@ -12,9 +11,7 @@ function App(): React.JSX.Element {
         barStyle="light-content"  // Always light content for our dark theme
         backgroundColor={theme.colors.background}
       />
-      <DatabaseProvider>
-        <RootNavigator />
-      </DatabaseProvider>
+      <RegistrationPage />
     </SafeAreaView>
   );
 }

@@ -165,3 +165,36 @@ export interface ProgressionScheme {
     };
   };
 }
+
+export interface WorkoutSetData {
+  setNumber: number;
+  weight: number;
+  reps: number;
+  rpe?: number;
+  notes?: string;
+}
+
+export interface WorkoutCompletionData {
+  notes?: string;
+  sleepQuality?: number;
+}
+
+// Custom error types for better error handling
+export class WorkoutError extends Error {
+  constructor(message: string, public code: string) {
+    super(message);
+    this.name = 'WorkoutError';
+  }
+}
+
+export class ValidationError extends WorkoutError {
+  constructor(message: string) {
+    super(message, 'VALIDATION_ERROR');
+  }
+}
+
+export class DatabaseError extends WorkoutError {
+  constructor(message: string) {
+    super(message, 'DATABASE_ERROR');
+  }
+}

@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
 import { Logo } from '../components/common/Logo';
-import { theme } from '../theme/theme';
+import { theme } from '../utils/theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../api/supabase';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
